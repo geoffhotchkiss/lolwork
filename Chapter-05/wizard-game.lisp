@@ -13,4 +13,3 @@
 (defun describe-location (location nodes)
   (cadr (assoc location nodes)))
 
-(describe-location 'garden *nodes*)
