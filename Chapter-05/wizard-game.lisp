@@ -13,3 +13,18 @@
 (defun describe-location (location nodes)
   (cadr (assoc location nodes)))
 
+; Defines an edges assoication where our key is the room and the value is a
+; list containing where they can move to, in what direction, and in what
+; manner they can move there.
+(defparameter *edges* '((living-room (garden west door)
+                                     (attic upstairs ladder))
+                        (garden (living-room eat door))
+                        (attic (living-room downstairs ladder))))
+
+; Describes an edge that is given to it.
+(defun describe-path (edge)
+  `(there is a ,(caddr edge) going ,(cadr edge) from here.))
+
+; Gets all the possible paths from a given point
+(defun describe-paths (location edges)
+  (apply #'append (mapcar #'describe-path (cdr (assoc location edges)))))
