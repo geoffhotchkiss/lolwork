@@ -50,13 +50,16 @@
                      `(you see a ,obj on the floor.)))
     (apply #'append (mapcar #'describe-obj (objects-at loc objs obj-loc)))))
 
+; Current location
 (defparameter *location* 'living-room)
 
+; Describes my current location
 (defun look ()
   (append (describe-location *location* *nodes*)
           (describe-paths *location* *edges*)
           (describe-objects *location* *objects* *object-locations*)))
 
+; Walks in the given direction
 (defun walk (direction)
   (let ((next (find direction
                     (cdr (assoc *location* *edges*))
@@ -66,6 +69,7 @@
              (look))
       '(you cannot go that way.))))
 
+; Picks up the object at the current location
 (defun pickup (object)
   (cond ((member object 
                  (objects-at *location* *objects* *object-locations*))
@@ -73,5 +77,53 @@
          `(you are now carrying the ,object))
         (t '(you cannot get that.))))
 
+; Displays the inventory
 (defun inventory ()
   (cons 'items- (objects-at 'body *objects* *object-locations*)))
+
+; My very own game REPL! 
+(defun game-repl ()
+  (let ((cmd (game-read)))
+    (unless (eq (car cmd) 'quit)
+      (game-print (game-eval cmd))
+      (game-repl))))
+
+;  My own read which attaches ()'s to everything and quotes as needed
+(defun game-read ()
+  (let ((cmd (read-from-string 
+               (concatenate 'string "(" (read-line) ")"))))
+    (flet ((quote-it (x)
+                     (list 'quote x)))
+      (cons (car cmd) (mapcar #'quote-it (cdr cmd))))))
+
+; The allowed commands for the user
+(defparameter *allowed-commands* '(look walk pickup inventory))
+
+; Evals the good commands
+(defun game-eval (sexp)
+  (if (member (car sexp) *allowed-commands*)
+    (eval sexp)
+    '(i do not know that command.)))
+
+; Does some crazy shit
+(defun tweak-text (lst caps lit)
+  (when lst
+    (let ((item (car lst))
+          (rest (cdr lst)))
+      (cond ((eq item #\space) (cons item (tweak-text rest caps lit)))
+            ((member item '(#\! #\? #\.)) (cons item (tweak-text rest t lit)))
+            ((eq item #\") (tweak-text rest caps (not lit)))
+            (lit (cons item (tweak-text rest nil lit)))
+            ((or caps lit) (cons (char-upcase item) (tweak-text rest nil lit)))
+            (t (cons (char-downcase item) (tweak-text rest nil nil)))))))
+
+; Also crazy shit
+(defun game-print (lst)
+  (princ (coerce (tweak-text (coerce (string-trim "() "
+                                                  (prin1-to-string lst))
+                                     'list)
+                             t
+                             nil)
+                 'string))
+  (fresh-line))
+
