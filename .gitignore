@@ -1,0 +1,3 @@
+# ignore png's and dots
+*.png
+*.dot
